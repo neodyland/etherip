@@ -16,6 +16,8 @@ int skt_fd;
 std::mutex tun_mutex;
 int tun_fd;
 
+std::string remote_addr;
+
 struct etherip_hdr {
     u_int16_t version : 4;
     u_int16_t reserved : 12;
@@ -47,7 +49,7 @@ int tun_alloc(char *dev, int flags) {
     return fd;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     std::cout << "Booting EtherIP" << std::endl;
 
     char tun_name[IFNAMSIZ];
@@ -55,6 +57,8 @@ int main() {
     tun_fd = tun_alloc(tun_name, IFF_TAP | IFF_NO_PI);
 
     skt_fd = socket(AF_INET, SOCK_RAW, 97);
+    remote_addr = argv[1];
+    std::cout << remote_addr << std::endl;
 
     std::thread t1([]() {
         char buf[1500];
@@ -74,14 +78,44 @@ int main() {
 
             {
                 std::lock_guard<std::mutex> lock(skt_mutex);
-                send(skt_fd, send_buf, len, 0);
+                sendto(skt_fd, send_buf, sizeof(send_buf), 0, (struct sockaddr *)&remote_addr, sizeof(remote_addr));
+            }
+            if (len < 0) {
+                std::cout << "Error sending to socket" << std::endl;
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(tun_mutex);
+                // buf have header and ethernet so we need to remove header
+
             }
         }
     });
 
     while (true) {
         char buf[1500];
+        int len;
 
+        {
+            std::lock_guard<std::mutex> lock(skt_mutex);
+            len = recvfrom(skt_fd, buf, sizeof(buf), 0, (struct sockaddr *)&remote_addr, (struct src_len *)&sizeof(remote_addr));
+        }
+
+        if (len < 14) {
+            std::cout << "This packet is too small for EtherIP" << std::endl;
+        }
+
+        // bufはヘッダーとイーサーネットフレームを持っている。しかしヘッダーはいらないから消す。
+        etherip_hdr hdr;
+        memcpy(&hdr, buf, sizeof(hdr));
+        if (hdr.version != 3) {
+            std::cout << "This packet's version is not 3" << std::endl;
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(tun_mutex);
+            write(tun_fd, buf + sizeof(hdr), len - sizeof(hdr));
+        }
     }
 
     close(tun_fd);

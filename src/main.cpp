@@ -58,6 +58,8 @@ int main(int argc, char *argv[]) {
 
     skt_fd = socket(AF_INET, SOCK_RAW, 97);
     remote_addr = argv[1];
+    socklen_t remote_addr_len;
+    remote_addr_len = sizeof(remote_addr);
     std::cout << remote_addr << std::endl;
 
     std::thread t1([]() {
@@ -98,7 +100,7 @@ int main(int argc, char *argv[]) {
 
         {
             std::lock_guard<std::mutex> lock(skt_mutex);
-            len = recvfrom(skt_fd, buf, sizeof(buf), 0, (struct sockaddr *)&remote_addr, (struct src_len *)&sizeof(remote_addr));
+            len = recvfrom(skt_fd, buf, sizeof(buf), 0, (struct sockaddr *)&remote_addr, &remote_addr_len);
         }
 
         if (len < 14) {

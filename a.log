@@ -1,0 +1,17 @@
+[ 50%] Building CXX object CMakeFiles/etherip.dir/src/main.cpp.o
+/home/ubuntu/projects/etherip/src/main.cpp: In function ‘int main(int, char**)’:
+/home/ubuntu/projects/etherip/src/main.cpp:103:90: error: invalid conversion from ‘socklen_t’ {aka ‘unsigned int’} to ‘socklen_t*’ {aka ‘unsigned int*’} [-fpermissive]
+  103 |             len = recvfrom(skt_fd, buf, sizeof(buf), 0, (struct sockaddr *)&remote_addr, remote_addr_len);
+      |                                                                                          ^~~~~~~~~~~~~~~
+      |                                                                                          |
+      |                                                                                          socklen_t {aka unsigned int}
+In file included from /usr/include/linux/if.h:28,
+                 from /home/ubuntu/projects/etherip/src/main.cpp:4:
+/usr/include/x86_64-linux-gnu/sys/socket.h:165:48: note:   initializing argument 6 of ‘ssize_t recvfrom(int, void*, size_t, int, sockaddr*, socklen_t*)’
+  165 |                          socklen_t *__restrict __addr_len);
+      |                          ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~
+gmake[2]: *** [CMakeFiles/etherip.dir/build.make:76: CMakeFiles/etherip.dir/src/main.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:83: CMakeFiles/etherip.dir/all] Error 2
+gmake: *** [Makefile:91: all] Error 2
+Booting EtherIP
+192.168.1.1
